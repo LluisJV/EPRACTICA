@@ -249,10 +249,10 @@ DECOD:
 	    ;codigo decodificacion
 	    
 	    
-	MOVE.W D0, 10(A7)
+    MOVE.W D0, 10(A7)
 	    
-	MOVE.L (A7)+, D0
-	RTS
+    MOVE.L (A7)+, D0
+    RTS
 
     ;--- FDECOD: FIN DECOD
     END    START
