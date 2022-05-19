@@ -18,23 +18,44 @@ ER5:    DC.W 0 ;eregistro R5
 ET6:    DC.W 0 ;eregistro T6
 ET7:    DC.W 0 ;eregistro T7
 ESR:    DC.W 0 ;eregistro de estado (00000000 00000ZCN)
+CODE:   DC.W $1111,$1111,$1111,$0000,$0000,$0000,$0000,$0000,$0000,$0000,$0000,$0000
+        DC.W $0000,$0000,$0000,$0000,$0000,$0000,$0000,$0000,$1111,$1111,$1111
+        
+EMEMLENGTH:        DC.W 23
 
 START:
     CLR.W EPC
 
 FETCH:
+
+
+
+;------------------------------------------------------------
+;Leyenda:
+
+    ;D1 --> se usa para hacer el dbra
+    ;A6 --> se usa para acceder a los datos del code
+
+
+;------------------------------------------------------------
+ 
+	
+	MOVE.L #23, D3
+	SUBQ.L #1, D3 ;inicializamos D1 para el DBRA
+	
+DecodInstrus:
+
     ;--- IFETCH: INICIO FETCH
         ;*** En esta seccion debeis introducir el codigo necesario para cargar
         ;*** en el EIR la siguiente instruccion a ejecutar, indicada por el EPC,
 	    ;*** y dejar listo el EPC para que apunte a la siguiente instruccion
 	
 	    ; ESCRIBID VUESTRO CODIGO AQUI
-	    
-	MOVE.W #EPC, A6 
+	
+	MOVE.W EPC, A6
+    ADD.W A6, A6   ;multiplicamos *2
 	MOVE.W EMEM(A6), EIR
 	ADDQ.W #1, EPC
-	    
-	    
 	    
         
     ;--- FFETCH: FIN FETCH
@@ -47,132 +68,17 @@ FETCH:
 
     	; ESCRIBID VUESTRO CODIGO AQUI
     	
+    	
     	SUBQ.L #2, A7
     	MOVE.W EIR, -(A7)
     	JSR DECOD
     	
-    	ADDQ.L #2 ,A7
-    	MOVE.W (A7)+,  
-    	
-    	
-DECODIFICACION:
-    MOVE.W (A0),D7 *D7 como "registro decofidicador"
-    AND.W #$8000,D7 *Mirar si 1st bit es 0
-    BNE FirstBitNotZero
-      
-      *Si no ha saltado, 1st bit es 1
-    MOVE.W (A0),D7 
-    AND.W #$4000,D7 *Mirar si 2nd bit es 1
-    BNE SecondBitNotZero
-      
-      *Si no ha saltado, 2nd bit es 0
-    MOVE.W (A0),D7 
-    AND.W #$2000,D7 *Mirar si 3rd bit es 1
-    BNE ThirdBitNotZero
-      
-      *Si no ha saltado, 3rd bit es 0
-    MOVE.W (A0),D7 
-    AND.W #$1000,D7 *Mirar si 4th bit es 0 = Mirar si es ins. 0
-    BEQ InsZero
-       
-     *Si no ha saltado, 4th bit es 1
-    MOVE.W (A0),D7 
-    BTST.L #11,D7
-    BEQ InsOne *Mirar si es ins. 1
-       
-     *Si no ha saltado, es ins. 2
-    MOVE.W #2,CODE(A1)
-    BRA BackToDecod
-       
-InsZero:
-    MOVE.W #0,CODE(A1)
-    BRA BackToDecod
-          
-InsOne: 
-    MOVE.W #1,CODE(A1)
-    BRA BackToDecod
-          
-FirstBitNotZero: 
-    MOVE.W (A0),D7 
-    AND.W #$4000,D7 Mirar si es ins. 13
-    BNE FinalIns
-    MOVE.W (A0),D7 
-    AND.W #$2000,D7 *Mirar si es ins. 12
-    BNE InsTwelve
-    MOVE.W (A0),D7 
-    AND.W #$1000,D7 *Mirar si es ins. 11
-    BNE InsEleven
-      
-     *Si no ha saltado, es ins. 10    
-    MOVE.W #10,CODE(A1)
-    BRA BackToDecod
-       
-      
-FinaLIns:
-    MOVE.W #13,CODE(A1)
-    BRA BackToDecod
-          
-InsTwelve:
-    MOVE.W #12,CODE(A1)
-    BRA BackToDecod
-     
-InsEleven:
-    MOVE.W #11,CODE(A1)
-    BRA BackToDecod
+    	 
+    	MOVE.W (A7)+, EIR       ;sacamos EIR
+    	MOVE.W (A7)+, CODE(A6)  ;hacemos pop del resultado de la pila dejandola vacia
         
-SecondBitNotZero:
-    MOVE.W (A0),D7
-    AND.W #$F000,D7
-    LSR.L #4,D7
-    LSR.L #8,D7
-    CMP.W #4,D7 *Mirar si es ins. 6
-    BEQ InsSix
-    CMP.W #5,D7 *Mirar si es ins. 7
-    BEQ InsSeven
-    CMP.W #6,D7 *Mirar si es ins. 8
-    BEQ InsEight
-      
-    *Si no ha saltado, es ins. 9
-    MOVE.W #9,CODE(A1)
-    BRA BackToDecod   
-      
-InsSix:
-    MOVE.W #6,CODE(A1)
-    BRA BackToDecod
-          
-InsSeven:
-    MOVE.W #7,CODE(A1)
-    BRA BackToDecod
-          
-InsEight:
-    MOVE.W #8,CODE(A1)
-    BRA BackToDecod
-          
-          
-  ThirdBitNotZero:
-    MOVE.W (A0),D7
-    AND.W #$1000,D7 *Mirar si es ins. 5
-    BNE InsFive
-    MOVE.W (A0),D7
-    AND.W #$0800,D7 *Mirar si es ins. 4
-    BNE InsFour
-      
-      *Si no ha saltado, es ins. 3
-    MOVE.W #3,CODE(A1)
-    BRA BackToDecod
-          
-InsFive:
-    MOVE.W #5,CODE(A1)
-    BRA BackToDecod
-InsFour:
-    MOVE.W #4,CODE(A1)
-    BRA BackToDecod       
-  
-BackToDecoD:
-    ADDQ.W #2,A1
-    ADDQ.W #2,A0
-    DBRA D1, DECODIFICACION
-    BRA STOP
+    	DBRA D3, DecodInstrus ;el resultado esta guardado en code, volvemos a iterar
+    	    
   
     ;--- FBRDECOD: FIN SALTO A DECOD
     
@@ -242,17 +148,150 @@ ESTP:
 DECOD:
 	    ; ESCRIBID VUESTRO CODIGO AQUI
 	    
+    MOVE.L D1, -(A7) ;cargamos los registros que vamos a usar
     MOVE.L D0, -(A7)
 	    
-    MOVE.W 8(A7), D0
+    MOVE.W 12(A7), D1 
+	
 	    
-	    ;codigo decodificacion
+	;codigo decodificacion
+	
+	MOVE.W D1,D0 ;D0 lo utilizaremos para hacer la AND
+    AND.W #$8000,D0 ;miramos si el primer bit es 0
+    BNE PrimerBitUno
+      
+      ;el primer bit es 0
+    MOVE.W D1,D0 
+    AND.W #$4000,D0
+    BNE SegundoBitUno ;saltamos si el bit 2 = 1
+      
+      ;el segundo bit es 0
+    MOVE.W D1,D0 
+    AND.W #$2000,D0 *Mirar si 3rd bit es 1
+    BNE TercerBitUno
+      
+      *Si no ha saltado, 3rd bit es 0
+    MOVE.W D1,D0 
+    AND.W #$1000,D0 *Mirar si 4th bit es 0 = Mirar si es ins. 0
+    BNE Id1o2
+       
+    
+    MOVE.W #0, D0 ;si no es ninguna de las anteriores, es 0 
+    BRA Salir
+       
+Id1o2:
+    MOVE.W D1, D0
+    AND.W #$0800, D0
+    BNE Id2
+    
+    ;si no salta es instrucción 1  
+    MOVE.W #1, D0
+    BRA Salir
+       
+Id2: 
+    MOVE.W #2,D0
+    BRA Salir
+          
+PrimerBitUno: 
+    MOVE.W D1,D0 
+    AND.W #$4000,D0 
+    BNE Final ;es 13
+    
+    MOVE.W D1,D0 
+    AND.W #$2000,D0 
+    BNE Id12 ;es 12
+    
+    MOVE.W D1,D0 
+    AND.W #$1000,D0 
+    BNE Id11 ;es 11   
+    
+    MOVE.W #10,D0
+    BRA Salir ;es 10
+             
+Final:
+    MOVE.W #13,D0
+    BRA Salir
+          
+Id12:
+    MOVE.W #12,D0
+    BRA Salir
+     
+Id11:
+    MOVE.W #11,D0
+    BRA Salir
+        
+SegundoBitUno:
+    
+    MOVE.W D1,D0 
+    AND.W #$2000,D0 
+    BNE Id8o9 ;se comprueba si es 8 o 9
+    
+    ;si no salta es 6 o 7
+    MOVE.W D1,D0 
+    AND.W #$1000,D0
+    BNE Id7
+    
+    ;si no salta es 6
+    MOVE.W #6, D0
+    BRA Salir
+    
+Id7:
+    MOVE.W #7, D0
+    BRA Salir
+    
+    
+Id8o9:
+    MOVE.W D1, D0
+    AND.W #$1000,D0 
+    BNE Id9 ;se comprueba si es 9
+    
+    ;si no salta es 8
+    MOVE.W #8, D0
+    BRA Salir
+    
+Id9:
+    MOVE.W #9, D0
+    BRA Salir   
+        
+          
+TercerBitUno:
+    MOVE.W D1,D0
+    AND.W #$1000,D0 ;es instrucción 5?
+    BNE Id5 ; si no salta, es 3 0 4
+    
+    MOVE.W D1, D0
+    AND.W #$0800, D0
+    BNE Id4
+      
+    ; Si no ha saltado, es ins. 3
+    MOVE.W #3,D0
+    BRA Salir
+          
+Id5:
+    MOVE.W #5,D0
+    BRA Salir   
+    
+Id4:
+    MOVE.W #4, D0
+
+    BRA Salir
+  
+Salir: ;salta cuando ya se sabe que instrucción es 
+	
+	;fin codigo decodificacion
 	    
-	    
-    MOVE.W D0, 10(A7)
-	    
-    MOVE.L (A7)+, D0
-    RTS
+	;guardamos resultado en la pila
+	MOVE.W D0, 14(A7)
+        
+	;recuperamos registros del usuario    
+	MOVE.L (A7)+, D0
+	MOVE.L (A7)+, D1
+	
+	RTS
 
     ;--- FDECOD: FIN DECOD
     END    START
+    
+    
+    ;D0 - Se usa para hacer la and bit a bit y como auxiliar para guardar el resultado
+    ;D1 - Se usa para guardar el dato a codificar (contenido de EIR), para que no se modifique con la and bit a bit
