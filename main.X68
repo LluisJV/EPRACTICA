@@ -547,7 +547,7 @@ ECes1:
 ECnoEs1:
     MOVE.W D5, D6 
     AND.W #$0008, D6 
-    BNE ENnoEs1
+    BNE ENes1
     
     BRA ENnoEs1
     
@@ -714,4 +714,3 @@ Salir: ;salta cuando ya se sabe que instrucción es
 Finalizar:
     
     END    START
-
