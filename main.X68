@@ -90,18 +90,18 @@ JMPLIST:
 	
 ETRA:
     MOVE.W EIR, D5
-    JSR CogerA
+    JSR CopiarA
     MOVE.W A5, A0 ;A0 contiene la dirección efectiva del registro aaa
     
     MOVE.W EIR, D5
-    JSR CogerB
+    JSR CopiarB
     MOVE.W A5, A1 ;A1 contiene la dirección efectiva del registro bbb
     
     MOVE.W (A0), (A1)
     
     ;actualizar eflags
     MOVE.W SR, D5
-    JSR CargarFlags ;devuelve los EFLAGS en D7
+    JSR CargarFlags   ;devuelve los EFLAGS en D7
     AND.W #$0005, D7
     MOVE.W D7, ESR
         
@@ -109,11 +109,11 @@ ETRA:
     
 EADD:
     MOVE.W EIR, D5
-    JSR CogerA
+    JSR CopiarA
     MOVE.W A5, A0 ;A0 contiene la dirección efectiva del registro aaa
     
     MOVE.W EIR, D5
-    JSR CogerB
+    JSR CopiarB
     MOVE.W A5, A1 ;A1 contiene la dirección efectiva del registro bbb
     
     CLR.L D4        ;inicializamos a 0
@@ -132,15 +132,15 @@ EADD:
     
 ESUB:
     MOVE.W EIR, D5
-    JSR CogerA
+    JSR CopiarA
     MOVE.W A5, A0 ;A0 contiene la dirección efectiva del registro aaa
     
     MOVE.W EIR, D5
-    JSR CogerB
+    JSR CopiarB
     MOVE.W A5, A1 ;A1 contiene la dirección efectiva del registro bbb
     
     NOT.W (A1)
-    ADDQ.W #1, (A1)
+    ADDQ.W #1, (A1) ;negamos bbb
     
     CLR.L D4        ;inicializamos a 0
     ADD.W (A0), D4
@@ -159,11 +159,11 @@ ESUB:
     
 ENAN:
     MOVE.W EIR, D5
-    JSR CogerA
+    JSR CopiarA
     MOVE.W A5, A0 ;A0 contiene la dirección efectiva del registro aaa
     
     MOVE.W EIR, D5
-    JSR CogerB
+    JSR CopiarB
     MOVE.W A5, A1 ;A1 contiene la dirección efectiva del registro bbb
     
 
@@ -186,11 +186,11 @@ ENAN:
 ESTC:
 
     MOVE.W EIR, D5
-    JSR CogerK
+    JSR CopiarK
     MOVE.W D5, D3  ;guardamos K en D3
     
     MOVE.W EIR, D5
-    JSR CogerB
+    JSR CopiarB
     MOVE.W A5, A1  ;contiene la dirección efectiva del registro bbb
     
     MOVE.W D3, (A1)
@@ -206,11 +206,11 @@ ESTC:
 EINC:
 
     MOVE.W EIR, D5
-    JSR CogerK
+    JSR CopiarK
     MOVE.W D5, D3  ;guardamos K en D3
     
     MOVE.W EIR, D5
-    JSR CogerB
+    JSR CopiarB
     MOVE.W A5, A1 ;A1 contiene la dirección efectiva del registro bbb
     
     CLR.L D4
@@ -229,7 +229,7 @@ EINC:
     
 ELOA:
     MOVE.W EIR, D5
-    JSR CogerM
+    JSR CopiarM
     MOVE.W D5, A0  ;A0 contiene la direción de memória emulada
     
     ADD.W A0, A0 ;multiplicamos x2 la memoria emulada
@@ -246,11 +246,11 @@ ELOA:
     
 ELOAX:
     MOVE.W EIR, D5
-    JSR CogerM
+    JSR CopiarM
     MOVE.W D5, D2  ;D2 contiene la direción de memória emulada
     
     MOVE.W EIR, D5  ;cargamos IJ
-    JSR CogerIJ
+    JSR CopiarIJ
         
     AND.W #$0002, D5
     BNE Ies1ELOAX
@@ -265,7 +265,7 @@ VolverLOAX:
   
     ;miramos si j es 1
     MOVE.W EIR, D5  ;cargamos IJ
-    JSR CogerIJ
+    JSR CopiarIJ
     AND.W #$0001, D5
     BNE Jes1ELOAX
     
@@ -298,7 +298,7 @@ SalirLOAX:
     
 ESTO:
     MOVE.W EIR, D5
-    JSR CogerM
+    JSR CopiarM
     MOVE.W D5, A0  ;A0 contiene la direción de memória emulada
     
     ADD.W A0, A0 ;multiplicamos x2 la memoria emulada
@@ -309,11 +309,11 @@ ESTO:
     
 ESTOX:
     MOVE.W EIR, D5
-    JSR CogerM
+    JSR CopiarM
     MOVE.W D5, D2  ;D2 contiene la direción de memória emulada
     
     MOVE.W EIR, D5    
-    JSR CogerIJ
+    JSR CopiarIJ
     MOVE.W D5, D3  ;cargamos IJ
         
     AND.W #$0002, D3
@@ -330,7 +330,7 @@ VolverESTOX:
   
     ;miramos si j es 1
     MOVE.W EIR, D5    
-    JSR CogerIJ
+    JSR CopiarIJ
     AND.W #$0001, D5
     BNE Jes1ESTOX
     
@@ -358,7 +358,7 @@ SalirESTOX:
 EBRI:
 
     MOVE.W EIR, D5
-    JSR CogerM
+    JSR CopiarM
     MOVE.W D5, A0  ;A0 contiene la direción de memória emulada    
 
     MOVE.W A0, EPC
@@ -366,7 +366,7 @@ EBRI:
     BRA ProxInst
 EBRZ:
     MOVE.W EIR, D5
-    JSR CogerM
+    JSR CopiarM
     MOVE.W D5, A0  ;A0 contiene la direción de memória emulada
     
     AND.W #$0004, ESR
@@ -382,7 +382,7 @@ Zes0:
     BRA ProxInst
 EBRN:
     MOVE.W EIR, D5
-    JSR CogerM
+    JSR CopiarM
     MOVE.W D5, A0  ;A0 contiene la direción de memória emulada
     
     AND.W #$0001, ESR
@@ -401,7 +401,7 @@ ESTP:
 
 ProxInst:
      
-    BRA FETCH ;el resultado esta guardado en code, volvemos a iterar
+    BRA FETCH ;volvemos al fetch
 
     ;--- FEXEC: FIN EJECUCION
 
@@ -413,7 +413,7 @@ ProxInst:
 
 	    ; ESCRIBID VUESTRO CODIGO AQUI
 	    
-	    CogerA: ;desplaza 4 a la derecha y copia el valor aaa
+CopiarA: ;desplaza 4 a la derecha y copia el valor aaa
     LSR.L #4,D5
     AND.W #$0007, D5
     
@@ -421,7 +421,7 @@ ProxInst:
     
     RTS
     
-CogerB: ;desplaza 4 a la derecha y copia el valor bbb
+CopiarB: ;desplaza 4 a la derecha y copia el valor bbb
     LSR.L #8,D5
     AND.W #$0007, D5
     
@@ -429,28 +429,27 @@ CogerB: ;desplaza 4 a la derecha y copia el valor bbb
     
     RTS
     
-CogerM:
+CopiarM: ;desplaza 4 a la derecha y copia el valor M (8 bits)
     LSR.L #4, D5
     AND.W #$00FF, D5
     
     RTS
     
-CogerIJ:
-    
+CopiarIJ: ;desplazamos 2 a la derecha y copia IJ
     LSR.L #2, D5
     AND.W #0003, D5
     
     RTS
     
-CogerK:
+CopiarK:
     
     AND.B #$FF, D5
-    EXT.W D5        ;extendemos el signo
+    EXT.W D5   ;extendemos el signo de 8 a 16 bits
     
     RTS
     
     
-DecodRegistro:
+DecodRegistro: ;decodificamos el registro aaa/bbb
     ;si primer bit uno
     MOVE.W D5, D0
     AND.W #$0004, D0
@@ -518,7 +517,6 @@ TerBitUno:
     LEA.L EB1, A5 ;guardamos dirección efectiva
     BRA Leave
     
-
 Leave:  
   
     RTS
