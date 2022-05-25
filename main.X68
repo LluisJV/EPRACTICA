@@ -50,9 +50,6 @@ FETCH:
 ;------------------------------------------------------------
  
 	
-	MOVE.L #23, D3
-	SUBQ.L #1, D3 ;inicializamos D1 para el DBRA
-	
 DecodInstrus:
 
     ;--- IFETCH: INICIO FETCH
@@ -87,7 +84,7 @@ DecodInstrus:
     MOVE.W (A7)+, EIR       ;sacamos EIR
     MOVE.W (A7)+, D1        ;hacemos pop del resultado de la pila dejandola vacia
     
-    DBRA D3, DecodInstrus ;el resultado esta guardado en code, volvemos a iterar
+
     	    
   
     ;--- FBRDECOD: FIN SALTO A DECOD
@@ -122,8 +119,7 @@ JMPLIST:
         ;*** En esta seccion debeis implementar la ejecucion de cada einstr.
 	
 	; ESCRIBID EN CADA ETIQUETA LA FASE DE EJECUCION DE CADA INSTRUCCION
-
-
+    
 ETRA:
     MOVE.W EIR, D5
     JSR CogerA
@@ -139,9 +135,10 @@ ETRA:
     MOVE.W SR, D5
     JSR CargarFlags ;devuelve los EFLAGS en D7
     AND.W #$0005, D7
-    MOVE.W D7, SR
+    MOVE.W D7, ESR
         
-   
+    BRA ProxInst
+    
 EADD:
     MOVE.W EIR, D5
     JSR CogerA
@@ -154,13 +151,17 @@ EADD:
     CLR.L D4        ;inicializamos a 0
     ADD.W (A0), D4
     ADD.W (A1), D4  ;acumulamos la suma en D4
-    MOVE.W D4, (A1)
     
-
-;------------------------------------------------------------------------------------    
-    ;falta implementar flags
-;------------------------------------------------------------------------------------    
-
+    ;actualizar eflags
+    MOVE.W SR, D5
+    JSR CargarFlags ;devuelve los EFLAGS en D7
+    AND.W #$0007, D7
+    MOVE.W D7, ESR
+    
+    MOVE.W D4, (A1)
+     
+    BRA ProxInst
+    
 ESUB:
     MOVE.W EIR, D5
     JSR CogerA
@@ -168,20 +169,26 @@ ESUB:
     
     MOVE.W EIR, D5
     JSR CogerB
-    MOVE.W A5, A1 ;A1 contiene la dirección efectiva del registro bbb
+    MOVE.W D5, A1 ;A1 contiene la dirección efectiva del registro bbb
     
-    NEG.W (A1)
+    NOT.W (A1)
+    ADDQ.W #1, (A1)
     
     CLR.L D4        ;inicializamos a 0
     ADD.W (A0), D4
     ADD.W (A1), D4  ;acumulamos la suma en D4
+    
+    ;actualizar eflags
+    MOVE.W SR, D5
+    JSR CargarFlags ;devuelve los EFLAGS en D7
+    AND.W #$0007, D7
+    MOVE.W D7, ESR
+    
+    
     MOVE.W D4, (A1)
-
-
-
-;------------------------------------------------------------------------------------    
-    ;falta implementar flags
-;------------------------------------------------------------------------------------    
+    
+    BRA ProxInst
+    
 ENAN:
     MOVE.W EIR, D5
     JSR CogerA
@@ -189,7 +196,7 @@ ENAN:
     
     MOVE.W EIR, D5
     JSR CogerB
-    MOVE.W A5, A1 ;A1 contiene la dirección efectiva del registro bbb
+    MOVE.W D5, A1 ;A1 contiene la dirección efectiva del registro bbb
     
 
     MOVE.W (A0), D3 
@@ -198,11 +205,16 @@ ENAN:
     AND.W D3, D4 ;hacemos la NAND
     NEG.W D4 
     
+    ;actualizar eflags
+    MOVE.W SR, D5
+    JSR CargarFlags ;devuelve los EFLAGS en D7
+    AND.W #$0005, D7
+    MOVE.W D7, ESR
+    
     MOVE.W D4, (A1)
     
-;------------------------------------------------------------------------------------    
-    ;falta implementar flags
-;------------------------------------------------------------------------------------    
+    BRA ProxInst 
+ 
 ESTC:
 
     MOVE.W EIR, D5
@@ -211,13 +223,18 @@ ESTC:
     
     MOVE.W EIR, D5
     JSR CogerB
-    MOVE.W A5, A1 ;A1 contiene la dirección efectiva del registro bbb
+    MOVE.W A5, A1  ;contiene la dirección efectiva del registro bbb
     
     MOVE.W D3, (A1)
-
-;------------------------------------------------------------------------------------    
-    ;falta implementar flags
-;------------------------------------------------------------------------------------    
+    
+    ;actualizar eflags
+    MOVE.W SR, D5
+    JSR CargarFlags ;devuelve los EFLAGS en D7
+    AND.W #$0005, D7
+    MOVE.W D7, ESR
+    
+    BRA ProxInst
+    
 EINC:
 
     MOVE.W EIR, D5
@@ -232,78 +249,102 @@ EINC:
     ADD.W D3, D4
     ADD.W (A1), D4 ;acumulamos la suma
     
+    ;actualizar eflags
+    MOVE.W SR, D5
+    JSR CargarFlags ;devuelve los EFLAGS en D7
+    AND.W #$0007, D7
+    MOVE.W D7, ESR
+    
     MOVE.W D4, (A1)
-
-
-;------------------------------------------------------------------------------------    
-    ;falta implementar flags
-;------------------------------------------------------------------------------------    
+    
+    BRA ProxInst
+    
 ELOA:
     MOVE.W EIR, D5
     JSR CogerM
     MOVE.W D5, A0  ;A0 contiene la direción de memória emulada
     
+    ADD.W A0, A0 ;multiplicamos x2 la memoria emulada
+    
     MOVE.W EMEM(A0), ET6 
-
-;------------------------------------------------------------------------------------    
-    ;falta implementar flags
-;------------------------------------------------------------------------------------    
+    
+    ;actualizar eflags
+    MOVE.W SR, D5
+    JSR CargarFlags ;devuelve los EFLAGS en D7
+    AND.W #$0005, D7
+    MOVE.W D7, ESR
+    
+    BRA ProxInst
+    
 ELOAX:
     MOVE.W EIR, D5
     JSR CogerM
     MOVE.W D5, D2  ;D2 contiene la direción de memória emulada
-        
+    
+    MOVE.W EIR, D5  ;cargamos IJ
     JSR CogerIJ
-    MOVE.W D5, D3  ;cargamos IJ
         
-    AND.W #$0002, D3
+    AND.W #$0002, D5
     BNE Ies1ELOAX
         
     ;si no salta, I es 0
+    MOVE.L #0, A5
     ADD.W (EB0), A5
     ADD.W  D2, A5 ;sumamos contenido de EB0 + m 
+    ADD.W A5, A5 ;multiplicamos x2 la memoria emulada
         
 VolverLOAX:   
   
     ;miramos si j es 1
-    MOVE.W D5, D3
-    AND.W #$0001, D3
+    MOVE.W EIR, D5  ;cargamos IJ
+    JSR CogerIJ
+    AND.W #$0001, D5
     BNE Jes1ELOAX
     
         
     ;si no salta J es 0
-    MOVE.W (A5), ET6
+    MOVE.W EMEM(A5), ET6
     BRA SalirLOAX
         
         
 Ies1ELOAX:
+    MOVE.L #0, A5
     ADD.W (EB1), A5
     ADD.W  D2, A5 ;sumamos contenido de EB1 + m
+    ADD.W A5, A5 ;multiplicamos x2 la memoria emulada
     BRA VolverLOAX
      
     
 Jes1ELOAX:
-    MOVE.W (A5), ET7
+    MOVE.W EMEM(A5), ET7
     
 SalirLOAX:
 
-;------------------------------------------------------------------------------------    
-    ;falta implementar flags
-;------------------------------------------------------------------------------------  
-  
+    ;actualizar eflags
+    MOVE.W SR, D5
+    JSR CargarFlags ;devuelve los EFLAGS en D7
+    AND.W #$0005, D7
+    MOVE.W D7, ESR
+    
+    BRA ProxInst
+    
 ESTO:
     MOVE.W EIR, D5
     JSR CogerM
     MOVE.W D5, A0  ;A0 contiene la direción de memória emulada
     
+    ADD.W A0, A0 ;multiplicamos x2 la memoria emulada
+    
     
     MOVE.W ET6, EMEM(A0)
- 
+    BRA ProxInst
+    
 ESTOX:
     MOVE.W EIR, D5
     JSR CogerM
     MOVE.W D5, D2  ;D2 contiene la direción de memória emulada
-        
+    
+    MOVE.W EIR, D5    
     JSR CogerIJ
     MOVE.W D5, D3  ;cargamos IJ
         
@@ -311,34 +352,41 @@ ESTOX:
     BNE Ies1ESTOX
         
     ;si no salta, I es 0
+    MOVE.L #0, A5
     ADD.W (EB0), A5
     ADD.W  D2, A5 ;sumamos contenido de EB0 + m
+    
+    ADD.W A5, A5 ;multiplicamos x2 la memoria emulada
         
 VolverESTOX:   
   
     ;miramos si j es 1
-    MOVE.W D5, D3
-    AND.W #$0001, D3
+    MOVE.W EIR, D5    
+    JSR CogerIJ
+    AND.W #$0001, D5
     BNE Jes1ESTOX
     
         
     ;si no salta J es 0
     MOVE.W (ET6), EMEM(A5)
     BRA SalirESTOX
-        
-        
+         
 Ies1ESTOX:
+    MOVE.L #0, A5
     ADD.W (EB1), A5
     ADD.W  D2, A5 ;sumamos contenido de EB1 + m
+    ADD.W A5, A5 ;multiplicamos x2 la memoria emulada
+    
     BRA VolverESTOX
      
     
 Jes1ESTOX:
     MOVE.W (ET7), EMEM(A5)
     
-    
+     
 SalirESTOX:
-   
+    BRA ProxInst
+    
 EBRI:
 
     MOVE.W EIR, D5
@@ -347,7 +395,7 @@ EBRI:
 
     MOVE.W A0, EPC
 
-  
+    BRA ProxInst
 EBRZ:
     MOVE.W EIR, D5
     JSR CogerM
@@ -363,7 +411,7 @@ Zes1:
     MOVE.W A0, EPC
     
 Zes0:
-  
+    BRA ProxInst
 EBRN:
     MOVE.W EIR, D5
     JSR CogerM
@@ -379,9 +427,14 @@ Nes1:
     MOVE.W A0, EPC
     
 Nes0:
-  
+    BRA ProxInst
 ESTP:
-    BRA Finalizar  ; terminamos el programa   
+    BRA Finalizar  ; terminamos el programa  
+
+ProxInst:
+     
+    MOVE.W EMEMLENGTH, D3
+    BRA DecodInstrus ;el resultado esta guardado en code, volvemos a iterar
 
     ;--- FEXEC: FIN EJECUCION
     
@@ -400,22 +453,24 @@ CogerA: ;desplaza 4 a la derecha y copia el valor aaa
     
     RTS
     
-CogerB: ;desplaza 4 a la derecha y copia el valor aaa
+CogerB: ;desplaza 4 a la derecha y copia el valor bbb
     LSR.L #8,D5
     AND.W #$0007, D5
+    
+    JSR DecodRegistro
     
     RTS
     
 CogerM:
     LSR.L #4, D5
-    AND.W #$0088, D5
+    AND.W #$00FF, D5
     
     RTS
     
 CogerIJ:
     
     LSR.L #2, D5
-    AND.W #0002, D5
+    AND.W #0003, D5
     
     RTS
     
@@ -700,4 +755,7 @@ Finalizar:
     
     ;D0 - Se usa para hacer la and bit a bit y como auxiliar para guardar el resultado
     ;D1 - Se usa para guardar el dato a codificar (contenido de EIR), para que no se modifique con la and bit a bit
+
+
+
 
