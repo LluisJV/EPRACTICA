@@ -1,6 +1,6 @@
 *-----------------------------------------------------------
 * Title      : PRAFIN22
-* Written by : <nombres completos de los autores>
+* Written by : Iván Gómez y Luis Jover 
 * Date       : 30/05/2022
 * Description: Emulador de la JARVIS
 *-----------------------------------------------------------
@@ -18,52 +18,23 @@ ER5:    DC.W 0 ;eregistro R5
 ET6:    DC.W 0 ;eregistro T6
 ET7:    DC.W 0 ;eregistro T7
 ESR:    DC.W 0 ;eregistro de estado (00000000 00000ZCN)
-        
-EMEMLENGTH:        DC.W 23
 
 START:
     CLR.W EPC
 
 FETCH:
-
-
-
-;------------------------------------------------------------
-;Leyenda:
-
-    ;D1 --> se usa para hacer el dbra
-    ;D2 --> registro temporal
-    ;D3 --> registro temporal
-    ;D4 --> registro temporal
-    ;D5 --> se usa para parametro de entrada y salida subrutina
-    ;D6 --> registro temporal para los eflags
-    ;D7 --> registro temporal para los eflags
-    
-    
-    ;A0 --> direccion efectiva de aaa
-    ;A1 --> direccion efectiva de bbb
-    
-    ;A5 --> se usa para guardar la direccion efectiva de los eregistros
-    ;A6 --> se usa para acceder a los datos del code
-
-
-;------------------------------------------------------------
- 
-	
-DecodInstrus:
-
     ;--- IFETCH: INICIO FETCH
         ;*** En esta seccion debeis introducir el codigo necesario para cargar
         ;*** en el EIR la siguiente instruccion a ejecutar, indicada por el EPC,
 	    ;*** y dejar listo el EPC para que apunte a la siguiente instruccion
 	
-	    ; ESCRIBID VUESTRO CODIGO AQUI
-	
+	    ; ESCRIBID VUESTRO CODIGO AQUI    
+	    
 	MOVE.W EPC, A6
     ADD.W A6, A6   ;multiplicamos *2
 	MOVE.W EMEM(A6), EIR
-	ADDQ.W #1, EPC
-	
+	ADDQ.W #1, EPC	    
+	    
         
     ;--- FFETCH: FIN FETCH
     
@@ -74,26 +45,22 @@ DecodInstrus:
         ;*** almacenando el resultado de la decodificacion en D1
 
     	; ESCRIBID VUESTRO CODIGO AQUI
-    	
-    
+    	    
     SUBQ.L #2, A7
     MOVE.W EIR, -(A7)
     JSR DECOD
     
     
-    MOVE.W (A7)+, EIR       ;sacamos EIR
-    MOVE.W (A7)+, D1        ;hacemos pop del resultado de la pila dejandola vacia
-    
-
-    	    
-  
+    MOVE.W (A7)+, EIR  ;sacamos EIR
+    MOVE.W (A7)+, D1 ;hacemos pop del resultado de la pila dejandola vacia
+    	
     ;--- FBRDECOD: FIN SALTO A DECOD
     
     
     ;--- IBREXEC: INICIO SALTO A FASE DE EJECUCION
         ;*** Esta seccion se usa para saltar a la fase de ejecucion
         ;*** NO HACE FALTA MODIFICARLA
-
+    
     MULU #6,D1
     MOVEA.L D1,A1
     JMP JMPLIST(A1)
@@ -112,6 +79,7 @@ JMPLIST:
     JMP EBRZ
     JMP EBRN
     JMP ESTP
+    
     ;--- FBREXEC: FIN SALTO A FASE DE EJECUCION
     
     
@@ -119,7 +87,7 @@ JMPLIST:
         ;*** En esta seccion debeis implementar la ejecucion de cada einstr.
 	
 	; ESCRIBID EN CADA ETIQUETA LA FASE DE EJECUCION DE CADA INSTRUCCION
-    
+	
 ETRA:
     MOVE.W EIR, D5
     JSR CogerA
@@ -169,7 +137,7 @@ ESUB:
     
     MOVE.W EIR, D5
     JSR CogerB
-    MOVE.W D5, A1 ;A1 contiene la dirección efectiva del registro bbb
+    MOVE.W A5, A1 ;A1 contiene la dirección efectiva del registro bbb
     
     NOT.W (A1)
     ADDQ.W #1, (A1)
@@ -196,7 +164,7 @@ ENAN:
     
     MOVE.W EIR, D5
     JSR CogerB
-    MOVE.W D5, A1 ;A1 contiene la dirección efectiva del registro bbb
+    MOVE.W A5, A1 ;A1 contiene la dirección efectiva del registro bbb
     
 
     MOVE.W (A0), D3 
@@ -433,10 +401,10 @@ ESTP:
 
 ProxInst:
      
-    MOVE.W EMEMLENGTH, D3
-    BRA DecodInstrus ;el resultado esta guardado en code, volvemos a iterar
+    BRA FETCH ;el resultado esta guardado en code, volvemos a iterar
 
     ;--- FEXEC: FIN EJECUCION
+
     
 
     ;--- ISUBR: INICIO SUBRUTINAS
@@ -445,7 +413,7 @@ ProxInst:
 
 	    ; ESCRIBID VUESTRO CODIGO AQUI
 	    
-CogerA: ;desplaza 4 a la derecha y copia el valor aaa
+	    CogerA: ;desplaza 4 a la derecha y copia el valor aaa
     LSR.L #4,D5
     AND.W #$0007, D5
     
@@ -591,8 +559,6 @@ ENes1:
 ENnoEs1:
       
     RTS
-	    
-	    
         
     ;--- FSUBR: FIN SUBRUTINAS
     
@@ -601,7 +567,6 @@ ENnoEs1:
         ;*** Tras la etiqueta DECOD, debeis implementar la subrutina de 
         ;*** decodificacion, que debera ser de libreria, siguiendo la interfaz
         ;*** especificada en el enunciado
-          
 DECOD:
 	    ; ESCRIBID VUESTRO CODIGO AQUI
 	    
@@ -751,11 +716,4 @@ Salir: ;salta cuando ya se sabe que instrucción es
 Finalizar:
     
     END    START
-    
-    
-    ;D0 - Se usa para hacer la and bit a bit y como auxiliar para guardar el resultado
-    ;D1 - Se usa para guardar el dato a codificar (contenido de EIR), para que no se modifique con la and bit a bit
-
-
-
 
